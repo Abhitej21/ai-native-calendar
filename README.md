@@ -17,21 +17,34 @@ npm run dev
 
 No API keys required.
 
+## What’s in the prototype
+
+| Area | What you get |
+| --- | --- |
+| Week grid | Mon–Fri business view (8am–7pm), seeded week for **Abhiteja** |
+| Drag reschedule | Drag events across time/days · snaps to **15 minutes** · toast + undo |
+| Jump to date | Calendar picker to move the week anchor |
+| Day Health | 0–100 score (load, conflicts, soft invites, focus) + info tip |
+| One-click hygiene | **Decline soft**, **Resolve conflicts** (drops soft side; reshuffles hard↔hard), **Export agenda** |
+| Pulse agent | Persistent chat + suggestion chips (stay available after each turn) |
+| Demo AI intents | Brief today · protect focus · move Priya 1:1 · decline soft · resolve conflicts · find free slots |
+| Safety | **Undo** / ⌘/Ctrl+Z, Reset demo, create / cancel events, toasts |
+
 ## Demo script (interview)
 
-1. Open the app — seeded busy week for **Abhiteja**. Note the **Day Health** score.
+1. Open the app — seeded busy week for **Abhiteja**. Note the **Day Health** score (hover the **i** for what it measures).
 2. Chip: **Brief me on today** → conflicts, prep, soft meetings, load.
-3. Use **Resolve conflicts** / **Decline soft** on the Day Health card (one-click hygiene).
+3. Use **Resolve conflicts** / **Decline soft** on the Day Health card (one-click hygiene). Optionally **Export agenda**.
 4. Chip: **Protect 2 hours of focus tomorrow morning** → focus block + flagged soft conflict.
-5. Chip: **Move my 1:1 with Priya to Friday afternoon** → event moves on the grid.
-6. Hit **Undo** (or ⌘/Ctrl+Z) — shows AI changes are reversible.
+5. Chip: **Move my 1:1 with Priya to Friday afternoon** → event moves on the grid. Or **drag** any event to a new slot.
+6. Hit **Undo** (or ⌘/Ctrl+Z) — shows AI and drag changes are reversible.
 
 ## Architecture
 
 ```
 client/   Vite + React + TypeScript + Tailwind + Zustand
 server/   Express + TypeScript
-  CalendarService     domain (list/create/update/delete/slots/briefing/protectFocus)
+  CalendarService     domain (CRUD / slots / briefing / protectFocus / resolveConflicts)
   demoAi.ts           intent → tools (swap for LLM tool-calling later)
   /api/*              REST + POST /api/assistant
 ```
@@ -40,7 +53,7 @@ Production: `npm run build && npm start` builds the client and serves it from Ex
 
 ## Live demo
 
-Preferred: deploy the repo as a **Render** free Web Service.
+Preferred: deploy the repo as a **Render** free Web Service (`render.yaml` included).
 
 - Build: `npm run install:all && npm run build`
 - Start: `npm start`

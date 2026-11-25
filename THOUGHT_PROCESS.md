@@ -16,9 +16,9 @@ AI is not a chatbot bolted onto a week view. It is a persistent control surface 
 
 1. **Briefs** — what matters today (conflicts, prep, load, soft meetings).
 2. **Protects** — finds and blocks focus; flags soft collisions.
-3. **Reshuffles** — moves meetings with intent (“Priya 1:1 → Friday afternoon”).
-4. **Surfaces load** — meeting-density intelligence, not just empty slots.
-5. **Makes change safe** — Undo + Day Health + one-click conflict/soft hygiene so AI feels trustworthy, not reckless.
+3. **Reshuffles** — moves meetings with intent (“Priya 1:1 → Friday afternoon”) or by drag on the grid.
+4. **Surfaces load** — Day Health + meeting-density intelligence, not just empty slots.
+5. **Makes change safe** — Undo + Day Health hygiene (decline soft, resolve conflicts including hard↔hard reshuffle, export agenda) so AI feels trustworthy, not reckless.
 
 ## Why mock Calendar + Demo AI (for this prototype)
 
@@ -34,6 +34,8 @@ This is an intentional EOD tradeoff: prove the product loop and system shape, no
 | Express API + Vite React | Clear SDE boundaries: client → API → domain service |
 | In-memory seed week | Reliable interview script; “today” anchored to the real week |
 | Zustand on FE | Thin cache over API; assistant responses return full event list |
+| Pointer drag (not a generic DnD lib) | Time-grid snap + cross-day drop needs column geometry; hand-rolled kept behavior predictable |
+| `react-day-picker` for jump-to-date | Small, focused lib where it helped; avoid inventing a calendar popup |
 | No Next/Vercel required | Avoid account/env friction for the first ship; one Node process for prod |
 
 ## What “10x” looks like beyond this prototype
@@ -45,4 +47,4 @@ This is an intentional EOD tradeoff: prove the product loop and system shape, no
 
 ## EOD cuts (honest)
 
-Out of scope on purpose: real Google sync, streaming LLM, multi-user ACL, mobile, month view polish. Those belong in the “next” column once the core loop is undeniable.
+Out of scope on purpose: real Google sync, streaming LLM, multi-user ACL, mobile, month view polish, overlap column layout. Those belong in the “next” column once the core loop is undeniable.
