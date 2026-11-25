@@ -5,6 +5,7 @@ interface DayHealthProps {
   events: CalendarEvent[];
   onDeclineSoft: () => void;
   onResolveConflicts: () => void;
+  onExportAgenda: () => void;
   busy?: boolean;
 }
 
@@ -12,6 +13,7 @@ export function DayHealth({
   events,
   onDeclineSoft,
   onResolveConflicts,
+  onExportAgenda,
   busy,
 }: DayHealthProps) {
   const health = computeDayHealth(events);
@@ -26,8 +28,33 @@ export function DayHealth({
     <div className="rounded-2xl border border-line bg-white/80 p-4 shadow-sm backdrop-blur">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-            Today · Day health
+          <div className="flex items-center gap-1.5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              Today · Day health
+            </div>
+            <span className="group relative inline-flex">
+              <button
+                type="button"
+                className="flex h-4 w-4 items-center justify-center rounded-full border border-line bg-paper text-[10px] font-semibold text-ink-muted transition hover:border-sea hover:bg-sea-soft hover:text-sea focus:outline-none focus-visible:ring-2 focus-visible:ring-sea/30"
+                aria-label="What is Day Health?"
+                aria-describedby="day-health-tooltip"
+              >
+                i
+              </button>
+              <span
+                id="day-health-tooltip"
+                role="tooltip"
+                className="pointer-events-none absolute left-0 top-full z-30 mt-2 w-64 origin-top-left rounded-xl border border-line bg-white p-3 text-left text-[11px] font-normal normal-case tracking-normal text-ink-muted opacity-0 shadow-lg transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+              >
+                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-ink">
+                  What this measures
+                </span>
+                A 0–100 score of how sustainable today looks — meeting load,
+                schedule conflicts, soft (optional) invites, and whether you
+                have protected focus time. Use the actions to decline soft
+                meetings, clear conflicts, or export today’s agenda.
+              </span>
+            </span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-display text-3xl text-ink">{health.score}</span>
@@ -44,6 +71,15 @@ export function DayHealth({
           <p className="mt-1 max-w-md text-sm text-ink-muted">{health.tip}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onExportAgenda}
+            className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink hover:border-sea hover:bg-sea-soft disabled:opacity-40"
+            title="Download today’s agenda as text (also copies to clipboard)"
+          >
+            Export agenda
+          </button>
           <button
             type="button"
             disabled={busy || health.softCount === 0}

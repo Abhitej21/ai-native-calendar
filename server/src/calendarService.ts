@@ -67,7 +67,15 @@ export class CalendarService {
     return soft;
   }
 
-  resolveSoftConflicts(dayIso?: string): CalendarEvent[] {
+  /**
+   * Clear overlaps for a day:
+   * - soft vs anything → drop the soft side
+   * - hard vs hard → move the later-starting meeting to the next free slot
+   */
+  resolveConflicts(dayIso?: string): {
+    removed: CalendarEvent[];
+    moved: CalendarEvent[];
+  } {
     const day = dayIso ? startOfDay(parseISO(dayIso)) : startOfDay(new Date());
     const from = day.toISOString();
     const to = endOfDay(day).toISOString();
@@ -95,14 +103,115 @@ export class CalendarService {
     }
 
     const removed: CalendarEvent[] = [];
-    if (toRemove.size) {
-      this.checkpoint();
-      for (const id of toRemove) {
-        const r = this.delete(id);
-        if (r) removed.push(r);
+    const moved: CalendarEvent[] = [];
+    const needsHardPass = dayEvents.some((a, i) =>
+      dayEvents.slice(i + 1).some(
+        (b) =>
+          a.priority === 'hard' &&
+          b.priority === 'hard' &&
+          !toRemove.has(a.id) &&
+          !toRemove.has(b.id) &&
+          areIntervalsOverlapping(
+            { start: parseISO(a.start), end: parseISO(a.end) },
+            { start: parseISO(b.start), end: parseISO(b.end) },
+          ),
+      ),
+    );
+
+    if (!toRemove.size && !needsHardPass) return { removed, moved };
+
+    this.checkpoint();
+
+    for (const id of toRemove) {
+      const r = this.delete(id);
+      if (r) removed.push(r);
+    }
+
+    const remaining = this.list(from, to);
+    const movedIds = new Set<string>();
+    for (let i = 0; i < remaining.length; i++) {
+      for (let j = i + 1; j < remaining.length; j++) {
+        const a = remaining[i];
+        const b = remaining[j];
+        if (a.priority !== 'hard' || b.priority !== 'hard') continue;
+        if (movedIds.has(a.id) || movedIds.has(b.id)) continue;
+        if (
+          !areIntervalsOverlapping(
+            { start: parseISO(a.start), end: parseISO(a.end) },
+            { start: parseISO(b.start), end: parseISO(b.end) },
+          )
+        ) {
+          continue;
+        }
+
+        const aStart = parseISO(a.start).getTime();
+        const bStart = parseISO(b.start).getTime();
+        const mover = bStart >= aStart ? b : a;
+        const keeper = mover.id === a.id ? b : a;
+        const duration = differenceInMinutes(
+          parseISO(mover.end),
+          parseISO(mover.start),
+        );
+
+        const searchFrom = new Date(day);
+        searchFrom.setHours(9, 0, 0, 0);
+        const slots = this.findFreeSlots(
+          duration,
+          searchFrom.toISOString(),
+          to,
+        );
+        const keeperInterval = {
+          start: parseISO(keeper.start),
+          end: parseISO(keeper.end),
+        };
+        const isUsable = (slot: { start: string; end: string }) => {
+          const start = parseISO(slot.start);
+          const end = parseISO(slot.end);
+          return (
+            !areIntervalsOverlapping({ start, end }, keeperInterval) &&
+            start.getTime() !== parseISO(mover.start).getTime()
+          );
+        };
+        // Prefer a slot after the kept meeting so we don't yank people to 9am.
+        const pick =
+          slots.find(
+            (slot) =>
+              isUsable(slot) &&
+              parseISO(slot.start).getTime() >= keeperInterval.end.getTime(),
+          ) ??
+          slots.find(isUsable) ??
+          null;
+
+        let updated: CalendarEvent | null = null;
+        if (pick) {
+          updated = this.update(mover.id, {
+            start: pick.start,
+            end: pick.end,
+            title: mover.title.replace(/\s*\(overlap\)\s*$/i, ''),
+            description:
+              (mover.description ? `${mover.description} · ` : '') +
+              `Rescheduled by Pulse to clear conflict with “${keeper.title}”`,
+          });
+        } else {
+          const start = parseISO(keeper.end);
+          updated = this.update(mover.id, {
+            start: start.toISOString(),
+            end: addMinutes(start, duration).toISOString(),
+            title: mover.title.replace(/\s*\(overlap\)\s*$/i, ''),
+            description:
+              (mover.description ? `${mover.description} · ` : '') +
+              `Rescheduled by Pulse to clear conflict with “${keeper.title}”`,
+          });
+        }
+
+        if (updated) {
+          moved.push(updated);
+          movedIds.add(updated.id);
+        }
       }
     }
-    return removed;
+
+    return { removed, moved };
   }
 
   list(from?: string, to?: string): CalendarEvent[] {

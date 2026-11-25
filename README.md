@@ -25,7 +25,6 @@ No API keys required.
 4. Chip: **Protect 2 hours of focus tomorrow morning** → focus block + flagged soft conflict.
 5. Chip: **Move my 1:1 with Priya to Friday afternoon** → event moves on the grid.
 6. Hit **Undo** (or ⌘/Ctrl+Z) — shows AI changes are reversible.
-7. Press **⌘/Ctrl+K** — command palette for power-user flows.
 
 ## Architecture
 

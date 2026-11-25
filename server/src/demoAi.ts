@@ -74,14 +74,13 @@ export function handleAssistantMessage(
     };
   }
 
-  // --- Resolve conflicts (drop soft side) ---
+  // --- Resolve conflicts (drop soft side; reshuffle hard↔hard) ---
   if (/resolve conflict|fix overlap|clear conflict|fix today/.test(lower)) {
-    const removed = calendar.resolveSoftConflicts();
-    if (!removed.length) {
+    const { removed, moved } = calendar.resolveConflicts();
+    if (!removed.length && !moved.length) {
       return {
-        reply:
-          'No soft-side conflicts to auto-resolve. Hard vs hard overlaps still need a human call.',
-        actions: [{ type: 'info', message: 'No soft conflicts' }],
+        reply: 'No overlapping meetings to resolve today.',
+        actions: [{ type: 'info', message: 'No conflicts' }],
         events: calendar.list(),
       };
     }
@@ -92,11 +91,28 @@ export function handleAssistantMessage(
         eventId: e.id,
       });
     }
+    for (const e of moved) {
+      actions.push({
+        type: 'updated',
+        message: `Moved “${e.title}” to ${fmt(e.start)}`,
+        eventId: e.id,
+      });
+    }
+    const parts: string[] = [];
+    if (removed.length) {
+      parts.push(
+        `Dropped ${removed.length} soft meeting(s):\n` +
+          removed.map((e) => `• ${e.title}`).join('\n'),
+      );
+    }
+    if (moved.length) {
+      parts.push(
+        `Rescheduled ${moved.length} hard meeting(s) out of overlap:\n` +
+          moved.map((e) => `• ${e.title} → ${fmt(e.start)}`).join('\n'),
+      );
+    }
     return {
-      reply:
-        `Resolved overlaps by removing ${removed.length} soft meeting(s):\n` +
-        removed.map((e) => `• ${e.title}`).join('\n') +
-        `\n\nHard conflicts (if any) still need a decision.`,
+      reply: parts.join('\n\n') + `\n\nUndo anytime with Undo or ⌘/Ctrl+Z.`,
       actions,
       events: calendar.list(),
     };

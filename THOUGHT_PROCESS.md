@@ -19,7 +19,6 @@ AI is not a chatbot bolted onto a week view. It is a persistent control surface 
 3. **Reshuffles** — moves meetings with intent (“Priya 1:1 → Friday afternoon”).
 4. **Surfaces load** — meeting-density intelligence, not just empty slots.
 5. **Makes change safe** — Undo + Day Health + one-click conflict/soft hygiene so AI feels trustworthy, not reckless.
-6. **Meets power users** — ⌘/Ctrl+K command palette as a calendar OS affordance.
 
 ## Why mock Calendar + Demo AI (for this prototype)
 

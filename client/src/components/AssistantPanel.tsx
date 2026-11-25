@@ -9,12 +9,27 @@ const SUGGESTIONS = [
   'Resolve conflicts today',
 ];
 
+function AgentAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
+  const dim = size === 'sm' ? 'h-7 w-7 text-[10px]' : 'h-10 w-10 text-xs';
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-full bg-sea font-semibold tracking-wide text-white shadow-sm ${dim}`}
+      aria-hidden
+    >
+      P
+    </div>
+  );
+}
+
 export function AssistantPanel() {
   const messages = useCalendarStore((s) => s.messages);
   const sending = useCalendarStore((s) => s.sending);
   const sendMessage = useCalendarStore((s) => s.sendMessage);
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const usedSuggestions = new Set(
+    messages.filter((m) => m.role === 'user').map((m) => m.content.trim()),
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -28,63 +43,114 @@ export function AssistantPanel() {
   }
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-line bg-white/80 shadow-sm backdrop-blur lg:w-[380px] lg:shrink-0">
-      <header className="border-b border-line px-5 py-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sea">
-          Assistant
+    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm lg:w-[380px] lg:shrink-0">
+      <header className="flex items-center gap-3 border-b border-line bg-gradient-to-b from-sea-soft/50 to-white px-4 py-3.5">
+        <div className="relative">
+          <AgentAvatar />
+          <span
+            className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-focus agent-online"
+            title="Online"
+          />
         </div>
-        <h2 className="font-display text-2xl text-ink">Pulse</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Calendar OS for a busy business day — brief, protect, reshuffle.
-        </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-xl leading-none tracking-wide text-ink">
+              Pulse
+            </h2>
+            <span className="rounded-full bg-sea-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sea">
+              Agent
+            </span>
+          </div>
+          <p className="mt-1 truncate text-xs text-ink-muted">
+            {sending ? 'Working on your calendar…' : 'Online · ready to help'}
+          </p>
+        </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`max-w-[95%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-              m.role === 'user'
-                ? 'ml-auto bg-sea text-white'
-                : 'bg-paper-2 text-ink'
-            }`}
-          >
-            {m.content}
-          </div>
-        ))}
+      <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto bg-paper/40 px-3 py-4">
+        {messages.map((m) =>
+          m.role === 'assistant' ? (
+            <div key={m.id} className="flex items-end gap-2">
+              <AgentAvatar size="sm" />
+              <div className="min-w-0 max-w-[85%]">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
+                  Pulse
+                </div>
+                <div className="whitespace-pre-wrap rounded-2xl rounded-bl-md border border-line bg-white px-3.5 py-2.5 text-sm leading-relaxed text-ink shadow-sm">
+                  {m.content}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div key={m.id} className="flex justify-end">
+              <div className="max-w-[85%]">
+                <div className="mb-1 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
+                  You
+                </div>
+                <div className="whitespace-pre-wrap rounded-2xl rounded-br-md bg-sea px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-sm">
+                  {m.content}
+                </div>
+              </div>
+            </div>
+          ),
+        )}
+
         {sending ? (
-          <div className="w-fit rounded-2xl bg-paper-2 px-3.5 py-2.5 text-sm text-ink-muted">
-            Thinking…
+          <div className="flex items-end gap-2">
+            <AgentAvatar size="sm" />
+            <div className="rounded-2xl rounded-bl-md border border-line bg-white px-3.5 py-3 shadow-sm">
+              <div className="typing-dots flex items-center gap-1">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
           </div>
         ) : null}
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-line px-4 py-3">
-        <div className="mb-3 flex flex-wrap gap-2">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              disabled={sending}
-              onClick={() => void sendMessage(s)}
-              className="rounded-full border border-line bg-paper px-3 py-1.5 text-left text-[12px] text-ink transition hover:border-sea hover:bg-sea-soft disabled:opacity-50"
-            >
-              {s}
-            </button>
-          ))}
+      <div className="border-t border-line bg-white px-3 py-3">
+        <div className="mb-3">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+            Suggested for you
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {SUGGESTIONS.map((s) => {
+              const used = usedSuggestions.has(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => void sendMessage(s)}
+                  className={`rounded-full border px-2.5 py-1 text-left text-[11px] transition disabled:opacity-50 ${
+                    used
+                      ? 'border-line bg-paper text-ink-muted hover:border-sea/40 hover:bg-sea-soft/40 hover:text-sea'
+                      : 'border-sea/25 bg-sea-soft/60 text-sea hover:border-sea hover:bg-sea-soft'
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <form onSubmit={onSubmit} className="flex gap-2">
+
+        <form
+          onSubmit={onSubmit}
+          className="flex items-center gap-2 rounded-2xl border border-line bg-paper px-2 py-1.5 focus-within:border-sea focus-within:ring-2 focus-within:ring-sea/20"
+        >
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask Pulse…"
-            className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none ring-sea focus:ring-2"
+            placeholder="Message Pulse…"
+            className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2 text-sm outline-none"
           />
           <button
             type="submit"
             disabled={sending || !draft.trim()}
-            className="rounded-xl bg-ink px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sea disabled:opacity-40"
+            className="rounded-xl bg-sea px-3.5 py-2 text-sm font-medium text-white transition hover:bg-ink disabled:opacity-40"
           >
             Send
           </button>

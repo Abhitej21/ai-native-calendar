@@ -27,6 +27,7 @@ interface CalendarState {
   sendMessage: (text: string) => Promise<void>;
   createEvent: (input: Omit<CalendarEvent, 'id'>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
+  rescheduleEvent: (id: string, start: string, end: string) => Promise<void>;
   resetDemo: () => Promise<void>;
   undo: () => Promise<void>;
   refreshUndoState: () => Promise<void>;
@@ -51,7 +52,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       id: 'welcome',
       role: 'assistant',
       content:
-        "Hi Abhiteja — I'm Pulse. I manage your calendar like an operating system, not a grid of boxes.\n\nTry a chip below, or press ⌘/Ctrl+K for the command palette.",
+        "Hi Abhiteja — I'm Pulse. I manage your calendar like an operating system, not a grid of boxes.\n\nTry a chip below, or ask me to brief, protect focus, or reshuffle meetings.",
     },
   ],
   briefing: null,
@@ -202,6 +203,37 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     await get().refreshUndoState();
   },
 
+  async rescheduleEvent(id, start, end) {
+    const previous = get().events;
+    set((s) => ({
+      events: s.events
+        .map((e) => (e.id === id ? { ...e, start, end } : e))
+        .sort(
+          (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+        ),
+      highlightedIds: [id],
+      selectedEventId: id,
+    }));
+    try {
+      const { event } = await api.updateEvent(id, { start, end });
+      set((s) => ({
+        events: s.events
+          .map((e) => (e.id === id ? event : e))
+          .sort(
+            (a, b) =>
+              new Date(a.start).getTime() - new Date(b.start).getTime(),
+          ),
+      }));
+      get().pushToast(`Rescheduled “${event.title}”`);
+      await get().refreshUndoState();
+    } catch (e) {
+      set({ events: previous });
+      get().pushToast(
+        e instanceof Error ? e.message : 'Could not reschedule event',
+      );
+    }
+  },
+
   async undo() {
     try {
       const { events, canUndo } = await api.undo();
@@ -231,7 +263,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
           id: nextMsgId(),
           role: 'assistant',
           content:
-            'Demo week reset. Try briefing, focus protect, decline soft meetings, or ⌘/Ctrl+K.',
+            'Demo week reset. Try briefing, focus protect, or decline soft meetings.',
         },
       ],
     });
