@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --color-ink: #1a1f2e;
+  --color-ink-muted: #5c6578;
+  --color-paper: #f7f5f1;
+  --color-paper-2: #efece6;
+  --color-line: #ddd6cb;
+  --color-sea: #1f6f6a;
+  --color-sea-soft: #d8ebe9;
+  --color-coral: #c45c26;
+  --color-coral-soft: #f3e0d4;
+  --color-sky: #3d5a80;
+  --color-sky-soft: #dce6f0;
+  --color-focus: #2d6a4f;
+  --color-focus-soft: #d8f3dc;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #e8f0ee 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #f3e8df 0%, transparent 50%),
+    var(--color-paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+a[href],
+summary,
+label[for],
+label:has(input, select, textarea),
+select:not(:disabled),
+input[type='button']:not(:disabled),
+input[type='submit']:not(:disabled),
+input[type='reset']:not(:disabled),
+input[type='checkbox']:not(:disabled),
+input[type='radio']:not(:disabled),
+input[type='file']:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
